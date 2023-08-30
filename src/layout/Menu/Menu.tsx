@@ -26,7 +26,7 @@ export const Menu = (): JSX.Element => {
     return (
       <>
         { firstLevelMenu.map((menuCurrent) => (
-          <div key={ menuCurrent.route }>
+          <div key={ menuCurrent.id }>
             <Link href={ `/${ menuCurrent.route }` }>
               <div className={ cn(styles.firstLevel, {
                 [styles.firstLevelActive]: menuCurrent.id == firstCategory
