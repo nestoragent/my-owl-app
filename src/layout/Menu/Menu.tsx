@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { KeyboardEvent, useContext } from 'react';
 import { AppContext } from '@/context/app.context';
 import { FirstLevelMenuItem, PageItem } from '@/interfaces/menu.interface';
 import styles from './Menu.module.css';
@@ -6,11 +6,35 @@ import cn from 'classnames';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { firstLevelMenu } from '@/helpers/helpers';
-
+import { motion } from 'framer-motion';
 
 export const Menu = (): JSX.Element => {
   const { menu, setMenu, firstCategory } = useContext(AppContext);
   const router = useRouter();
+
+  const variants = {
+    visible: {
+      marginBottom: 20,
+      transition: {
+        when: 'beforeChildren',
+        staggerChildren: 0.1
+      }
+    },
+    hidden: {
+      marginBottom: 0
+    }
+  };
+
+  const variantsChildren = {
+    visible: {
+      opacity: 1,
+      height: 29
+    },
+    hidden: {
+      opacity: 1,
+      height: 0
+    }
+  };
 
   const openSecondLevel = (secondCategory: string) => {
     setMenu && setMenu(menu.map((m) => {
@@ -20,6 +44,13 @@ export const Menu = (): JSX.Element => {
 
       return m;
     }));
+  };
+
+  const openSecondLevelKey = (key: KeyboardEvent, secondCategory: string) => {
+    if (key.code == 'Space' || key.code == 'Enter') {
+      openSecondLevel(secondCategory);
+      key.preventDefault();
+    }
   };
 
   const buildFirstLevel = () => {
@@ -51,13 +82,22 @@ export const Menu = (): JSX.Element => {
           }
           return (
             <div key={ m._id.secondCategory }>
-              <div className={ styles.secondLevel }
-                   onClick={ () => openSecondLevel(m._id.secondCategory) }>{ m._id.secondCategory }</div>
-              <div className={ cn(styles.secondLevelBlock, {
-                [styles.secondLevelBlockOpened]: m.isOpened
-              }) }>
-                { buildThirdLevel(m.pages, menuItem.route) }
+              <div tabIndex={ 0 }
+                   className={ styles.secondLevel }
+                   onClick={ () => openSecondLevel(m._id.secondCategory) }
+                   onKeyDown={ (key: KeyboardEvent) => openSecondLevelKey(key, m._id.secondCategory) }
+              >
+                { m._id.secondCategory }
               </div>
+              <motion.div
+                layout
+                variants={ variants }
+                initial={ m.isOpened ? 'visible' : 'hidden' }
+                animate={ m.isOpened ? 'visible' : 'hidden' }
+                className={ cn(styles.secondLevelBlock) }
+              >
+                { buildThirdLevel(m.pages, menuItem.route, m.isOpened ?? false) }
+              </motion.div>
             </div>
           );
         }) }
@@ -65,14 +105,17 @@ export const Menu = (): JSX.Element => {
     );
   };
 
-  const buildThirdLevel = (pages: PageItem[], route: string) => {
+  const buildThirdLevel = (pages: PageItem[], route: string, isOpened: boolean) => {
     return (
       pages.map((page) => (
-        <Link href={ `/${ route }/${ page.alias }` } className={ cn(styles.thirdLevel, {
-          [styles.thirdLevelActive]: `/${ route }/${ page.alias }` == router.asPath
-        }) }>
-          { page.category }
-        </Link>
+        <motion.div variants={ variantsChildren } key={ page._id }>
+          <Link tabIndex={ isOpened ? 0 : -1 } href={ `/${ route }/${ page.alias }` }
+                className={ cn(styles.thirdLevel, {
+                  [styles.thirdLevelActive]: `/${ route }/${ page.alias }` == router.asPath
+                }) }>
+            { page.category }
+          </Link>
+        </motion.div>
       ))
     );
   };

@@ -7,9 +7,20 @@ import { ParsedUrlQuery } from 'querystring';
 import { ProductModel } from '@/interfaces/product.interface';
 import { firstLevelMenu } from '@/helpers/helpers';
 import { TopPageComponent } from '@/page-components';
+import { API } from '@/helpers/api';
+import Head from 'next/head';
 
 function TopPage({ firstCategory, menu, page, products }: TopPageProps): JSX.Element {
-  return <TopPageComponent firstCategory={ firstCategory } page={ page } products={ products }/>;
+  return <>
+      <Head>
+        <title>{page.metaTitle}</title>
+        <meta name='description' content={page.metaDescription}/>
+        <meta property='og:title' content={page.metaTitle}/>
+        <meta property='og:description' content={page.metaDescription}/>
+        <meta property='og:type' content='article'/>
+      </Head>
+      <TopPageComponent firstCategory={ firstCategory } page={ page } products={ products }/>
+    </>;
 }
 
 export default withLayout(TopPage);
@@ -18,7 +29,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
   let paths: string[] = [];
   for (const m of firstLevelMenu) {
     const { data: menu } =
-      await axios.post<MenuItem[]>(process.env.NEXT_PUBLIC_DOMAIN + '/api/top-page/find', {
+      await axios.post<MenuItem[]>(API.topPage.find, {
         firstCategory: m.id
       });
     paths = paths.concat(menu.flatMap((item) => item.pages.map((page) => `/${ m.route }/${ page.alias }`)));
@@ -46,11 +57,11 @@ export const getStaticProps: GetStaticProps<TopPageProps> = async ({ params }: G
 
   try {
     const { data: menu } =
-      await axios.post<MenuItem[]>(process.env.NEXT_PUBLIC_DOMAIN + '/api/top-page/find', { firstCategory: firstCategoryItem.id });
+      await axios.post<MenuItem[]>(API.topPage.find, { firstCategory: firstCategoryItem.id });
     const { data: page } =
-      await axios.get<TopPageModel>(process.env.NEXT_PUBLIC_DOMAIN + '/api/top-page/byAlias/' + params.alias);
+      await axios.get<TopPageModel>(API.topPage.byAlias + params.alias);
     const { data: products } =
-      await axios.post<ProductModel[]>(process.env.NEXT_PUBLIC_DOMAIN + '/api/product/find', {
+      await axios.post<ProductModel[]>(API.product.find, {
         category: page.category,
         limit: 10
       });

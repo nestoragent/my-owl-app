@@ -1,3 +1,5 @@
+import { Up } from '@/components/Up/Up';
+
 export * from './Htag/Htag';
 export * from './Button/Button';
 export * from './P/P';
@@ -13,3 +15,6 @@ export * from './Search/Search';
 export * from './Product/Product';
 export * from './Divider/Divider';
 export * from './Review/Review';
+export * from './ReviewForm/ReviewForm';
+export * from './Up/Up';
+export * from './ButtonIcon/ButtonIcon';

@@ -1,17 +1,41 @@
 import { ProductProps } from './Product.props';
 import styles from './Product.module.css';
-import { Button, Card, Divider, Rating, Review, Tag } from '@/components';
+import { Button, Card, Divider, Rating, Review, ReviewForm, Tag } from '@/components';
 import { declOfNum, priceRu } from '@/helpers/helpers';
 import Image from 'next/image';
 import cn from 'classnames';
-import { useState } from 'react';
+import { ForwardedRef, forwardRef, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 
-export const Product = ({ product, children, ...props }: ProductProps): JSX.Element => {
+export const Product = motion(forwardRef(({ product, children, className, ...props }: ProductProps, ref: ForwardedRef<HTMLDivElement>): JSX.Element => {
 
   const [isReviewOpened, setIsReviewOpened] = useState<boolean>(false);
+  const reviewRef = useRef<HTMLDivElement>(null);
+
+  const variants = {
+    visible: {
+      opacity: 1,
+      height: 'auto',
+      display: 'initial'
+    },
+    hidden: {
+      opacity: 0,
+      height: 0,
+      display: 'none'
+    }
+  };
+
+  const scrollToReview = () => {
+    setIsReviewOpened(true);
+    reviewRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+    reviewRef.current?.focus();
+  };
 
   return (
-    <>
+    <div className={ className } { ...props } ref={ref}>
       <Card className={ styles.product }>
         <div className={ styles.logo }>
           <Image
@@ -37,7 +61,11 @@ export const Product = ({ product, children, ...props }: ProductProps): JSX.Elem
         <div className={ styles.priceTitle }>Price</div>
         <div className={ styles.creditTitle }>Credit</div>
         <div
-          className={ styles.rateTitle }>{ product.reviewCount } { declOfNum(product.reviewCount, ['review', 'reviews', 'reviews']) }</div>
+          className={ styles.rateTitle }>
+          <a href="#ref" onClick={ scrollToReview }>
+            { product.reviewCount } { declOfNum(product.reviewCount, ['review', 'reviews', 'reviews']) }
+          </a>
+        </div>
 
         <Divider className={ styles.hr }/>
 
@@ -71,19 +99,24 @@ export const Product = ({ product, children, ...props }: ProductProps): JSX.Elem
           <Button
             onClick={ () => setIsReviewOpened(!isReviewOpened) }
             appearance="ghost"
-            arrow={isReviewOpened ? 'down' : 'right'}
+            arrow={ isReviewOpened ? 'down' : 'right' }
             className={ styles.reviewButton }>
             Read reviews
           </Button>
         </div>
+      </Card>
 
-      </Card>
-      <Card color="blue" className={ cn(styles.reviews, {
-        [styles.opened]: isReviewOpened,
-        [styles.closed]: !isReviewOpened
-      }) }>
-        {product.reviews.map((review) => (<Review key={review._id} review={review}/>))}
-      </Card>
-    </>
+      <motion.div animate={isReviewOpened ? 'visible' : 'hidden'} variants={variants} initial='hidden'>
+        <Card color="blue" className={ cn(styles.reviews) } ref={ reviewRef } tabIndex={isReviewOpened ? 0 : -1}>
+          { product.reviews.map((review) => (
+            <div key={ review._id }>
+              <Review review={ review }/>
+              <Divider/>
+            </div>
+          )) }
+          <ReviewForm isOpened={isReviewOpened} productId={ product._id }/>
+        </Card>
+      </motion.div>
+    </div>
   );
-};
+}));
